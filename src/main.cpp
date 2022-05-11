@@ -1,20 +1,54 @@
 #include <gueepo2d.h>
 
+// #todo: probably have to create a projectile manager or something that destroys projectiles after some time and when they are out of the camera
+class ProjectileComponent : public gueepo::Component {
+public:
+	gueepo::math::vec2 velocity;
+
+	void Initialize() {
+		velocity.y = 200.0f;
+	}
+
+	void Update(float DeltaTime) {
+		gueepo::GameObject* gameobjOwner = static_cast<gueepo::GameObject*>(Owner);
+		gameobjOwner->Translate(velocity * DeltaTime);
+	}
+};
+
 class ShipComponent : public gueepo::Component {
 public:
 	gueepo::math::vec2 velocity;
 	float shipSpeed;
 	float accelerationRate;
+	std::shared_ptr<gueepo::GameWorld> gameWorld;
+	gueepo::Texture* projectileTexture;
+	gueepo::math::vec2 projectileMinVec;
+	gueepo::math::vec2 projectileMaxVec;
+	gueepo::math::vec2 projectilePositionOffset;
 
 	void Initialize() {
 		shipSpeed = 200.0f;
 		accelerationRate = 0.05f;
+		projectilePositionOffset.y = 24.0f;
 	}
 
 	void BeginPlay() {}
 	
 	bool ProcessInput(const gueepo::InputState& CurrentInputState) { 
 		
+		// Handling Space (Shooting) first, and NOT returning
+		// Because we want the ability of being able to shoot and move at the same time :)
+		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_SPACE)) {
+			// #todo: how to shoot?
+			// have to instantiate a new gameobject;
+			// how do I instantiate a new gameobject from an entity?
+			gueepo::GameObject* proj = gameWorld->CreateGameObject(projectileTexture, "projectile");
+			proj->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
+			proj->transform->position = proj->transform->position + projectilePositionOffset;
+			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
+			proj->AddComponent<ProjectileComponent>();
+		}
+
 		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_D)) {
 			velocity.x += shipSpeed * accelerationRate;
 			if (velocity.x > shipSpeed) velocity.x = shipSpeed;
@@ -25,6 +59,7 @@ public:
 			if (velocity.x < -shipSpeed) velocity.x = -shipSpeed;
 			return true;
 		}
+		
 
 		return false;
 	}
@@ -35,9 +70,7 @@ public:
 		velocity = velocity * 0.97f;
 	}
 
-	void Destroy() {
-	
-	}
+	void Destroy() {}
 };
 
 class GameLayer : public gueepo::Layer {
@@ -54,7 +87,7 @@ public:
 
 private:
 	std::unique_ptr<gueepo::OrtographicCamera> m_Camera;
-	std::unique_ptr<gueepo::GameWorld> m_gameWorld;
+	std::shared_ptr<gueepo::GameWorld> m_gameWorld;
 	std::unique_ptr<gueepo::ResourceManager> m_resourceManager;
 };
 
@@ -63,19 +96,26 @@ void GameLayer::OnAttach() {
 	m_Camera = std::make_unique<gueepo::OrtographicCamera>(640, 360);
 	m_Camera->SetBackgroundColor(0.55f, 0.792f, 0.902f, 1.0f);
 
-	m_gameWorld = std::make_unique<gueepo::GameWorld>();
+	m_gameWorld = std::make_shared<gueepo::GameWorld>();
 	m_resourceManager = std::make_unique<gueepo::ResourceManager>();
 
 	m_resourceManager->AddTexture("ship", "./assets/ships_packed.png");
+	m_resourceManager->AddTilemap("ship-tilemap", "ship");
+	m_resourceManager->GetTilemap("ship-tilemap")->Slice(32, 32);
+
 	m_resourceManager->AddTexture("tiles", "./assets/tiles_packed.png");
 	m_resourceManager->AddTilemap("tiles-tilemap", "tiles");
-	m_resourceManager->GetTilemap("tiles-tilemap")->Slice(32, 32);
+	m_resourceManager->GetTilemap("tiles-tilemap")->Slice(16, 16);
 
 	gueepo::GameObject* test = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "shipTest");
-	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(4));
+	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(4));
 	test->SetScale(1.5f, 1.5f);
 	test->SetPosition(gueepo::math::vec2(0.0f, -150.0f));
-	test->AddComponent<ShipComponent>();
+	ShipComponent& comp = test->AddComponent<ShipComponent>();
+	comp.gameWorld = m_gameWorld;
+	comp.projectileTexture = m_resourceManager->GetTexture("tiles");
+	comp.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(9).GetRect().bottomLeft;
+	comp.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(9).GetRect().topRight;
 }
 
 void GameLayer::OnDetach() {
