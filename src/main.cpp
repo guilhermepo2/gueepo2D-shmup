@@ -1,5 +1,45 @@
 #include <gueepo2d.h>
 
+class ShipComponent : public gueepo::Component {
+public:
+	gueepo::math::vec2 velocity;
+	float shipSpeed;
+	float accelerationRate;
+
+	void Initialize() {
+		shipSpeed = 200.0f;
+		accelerationRate = 0.05f;
+	}
+
+	void BeginPlay() {}
+	
+	bool ProcessInput(const gueepo::InputState& CurrentInputState) { 
+		
+		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_D)) {
+			velocity.x += shipSpeed * accelerationRate;
+			if (velocity.x > shipSpeed) velocity.x = shipSpeed;
+			return true;
+		}
+		else if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_A)) {
+			velocity.x -= shipSpeed * accelerationRate;
+			if (velocity.x < -shipSpeed) velocity.x = -shipSpeed;
+			return true;
+		}
+
+		return false;
+	}
+
+	void Update(float DeltaTime) { 
+		gueepo::GameObject* gameobjOwner = static_cast<gueepo::GameObject*>(Owner);
+		gameobjOwner->Translate(velocity * DeltaTime);
+		velocity = velocity * 0.97f;
+	}
+
+	void Destroy() {
+	
+	}
+};
+
 class GameLayer : public gueepo::Layer {
 public:
 	GameLayer() : Layer("Game Layer") {}
@@ -7,7 +47,7 @@ public:
 	void OnAttach() override;
 	void OnDetach() override;
 	void OnUpdate(float DeltaTime) override;
-	void OnInput(const gueepo::InputState& currentInputState) override {}
+	void OnInput(const gueepo::InputState& currentInputState);
 	void OnEvent(gueepo::Event& e) override {}
 	void OnRender() override;
 	void OnImGuiRender() override {}
@@ -34,6 +74,8 @@ void GameLayer::OnAttach() {
 	gueepo::GameObject* test = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "shipTest");
 	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(4));
 	test->SetScale(1.5f, 1.5f);
+	test->SetPosition(gueepo::math::vec2(0.0f, -150.0f));
+	test->AddComponent<ShipComponent>();
 }
 
 void GameLayer::OnDetach() {
@@ -43,6 +85,10 @@ void GameLayer::OnDetach() {
 
 void GameLayer::OnUpdate(float DeltaTime) {
 	m_gameWorld->Update(DeltaTime);
+}
+
+void GameLayer::OnInput(const gueepo::InputState& currentInputState) {
+	m_gameWorld->ProcessInput(currentInputState);
 }
 
 void GameLayer::OnRender() {
