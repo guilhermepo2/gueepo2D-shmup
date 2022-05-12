@@ -14,6 +14,7 @@ static float fps;
 class ProjectileComponent : public gueepo::Component {
 public:
 	gueepo::math::vec2 velocity;
+	float lifetime = 5.0f;
 
 	void Initialize() {
 		velocity.y = 300.0f;
@@ -27,6 +28,7 @@ public:
 		}
 
 		velocity.y += randomVariation;
+		Owner->SetLifetime(lifetime);
 	}
 
 	void Update(float DeltaTime) {
@@ -46,8 +48,8 @@ public:
 	gueepo::math::vec2 projectileMaxVec;
 	gueepo::math::vec2 projectilePositionOffset;
 
-	float shootingCooldown;
-	float cooldownCount;
+	float shootingCooldown = 0.0f;
+	float cooldownCount = 0.0f;
 
 	void Initialize() {
 		shipSpeed = 200.0f;
