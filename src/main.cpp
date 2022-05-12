@@ -21,7 +21,7 @@ public:
 		// multiplying the velocity by a random factor
 		// I want to add/subtract 20% of the velocity according to random stuff
 		bool bShouldAdd = gueepo::rand::Int() % 2 == 0;
-		float randomVariation = gueepo::rand::Float() * (velocity.y * 0.2f);
+		float randomVariation = gueepo::rand::Float() * (velocity.y * 0.1f);
 
 		if (!bShouldAdd) {
 			randomVariation *= -1;
@@ -54,9 +54,11 @@ public:
 	void Initialize() {
 		shipSpeed = 200.0f;
 		accelerationRate = 0.05f;
+
+		projectilePositionOffset.x = 8.0f;
 		projectilePositionOffset.y = 24.0f;
 
-		shootingCooldown = 0.2f;
+		shootingCooldown = 0.1f;
 	}
 
 	void BeginPlay() {}
@@ -78,6 +80,15 @@ public:
 			proj->transform->position = proj->transform->position + projectilePositionOffset;
 			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
 			proj->AddComponent<ProjectileComponent>();
+
+			gueepo::GameObject* proj2 = gameWorld->CreateGameObject(projectileTexture, "projectile");
+			proj2->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
+			proj2->transform->position.x -= projectilePositionOffset.x;
+			proj2->transform->position.y += projectilePositionOffset.y;
+			proj2->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
+			proj2->AddComponent<ProjectileComponent>();
+
+
 			cooldownCount = shootingCooldown;
 		}
 
