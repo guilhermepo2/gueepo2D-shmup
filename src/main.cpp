@@ -1,4 +1,14 @@
+// ================================================
+// The shoot'em shmup task list
+// - [ ] make projectiles glow because that would be cool
+// - [ ] add a trail renderer on projectiles? (I have no idea how to do that but that would be cool)
+// - [ ] particles would be cool
+// ================================================
+
 #include <gueepo2d.h>
+#include <imgui.h>
+
+static float fps;
 
 // #todo: probably have to create a projectile manager or something that destroys projectiles after some time and when they are out of the camera
 class ProjectileComponent : public gueepo::Component {
@@ -6,7 +16,17 @@ public:
 	gueepo::math::vec2 velocity;
 
 	void Initialize() {
-		velocity.y = 200.0f;
+		velocity.y = 300.0f;
+		// multiplying the velocity by a random factor
+		// I want to add/subtract 20% of the velocity according to random stuff
+		bool bShouldAdd = gueepo::rand::Int() % 2 == 0;
+		float randomVariation = gueepo::rand::Float() * (velocity.y * 0.2f);
+
+		if (!bShouldAdd) {
+			randomVariation *= -1;
+		}
+
+		velocity.y += randomVariation;
 	}
 
 	void Update(float DeltaTime) {
@@ -26,10 +46,15 @@ public:
 	gueepo::math::vec2 projectileMaxVec;
 	gueepo::math::vec2 projectilePositionOffset;
 
+	float shootingCooldown;
+	float cooldownCount;
+
 	void Initialize() {
 		shipSpeed = 200.0f;
 		accelerationRate = 0.05f;
 		projectilePositionOffset.y = 24.0f;
+
+		shootingCooldown = 0.2f;
 	}
 
 	void BeginPlay() {}
@@ -38,15 +63,20 @@ public:
 		
 		// Handling Space (Shooting) first, and NOT returning
 		// Because we want the ability of being able to shoot and move at the same time :)
-		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_SPACE)) {
+		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_SPACE) && cooldownCount <= 0.0f) {
 			// #todo: how to shoot?
 			// have to instantiate a new gameobject;
 			// how do I instantiate a new gameobject from an entity?
+			// The current solution is having the gameworld as a public attribute here, I don't like it.
+			// Should the game world be a global? like GameObject.Instantiate(position, rotation, scale)?
+
+			
 			gueepo::GameObject* proj = gameWorld->CreateGameObject(projectileTexture, "projectile");
 			proj->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
 			proj->transform->position = proj->transform->position + projectilePositionOffset;
 			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
 			proj->AddComponent<ProjectileComponent>();
+			cooldownCount = shootingCooldown;
 		}
 
 		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_D)) {
@@ -68,6 +98,8 @@ public:
 		gueepo::GameObject* gameobjOwner = static_cast<gueepo::GameObject*>(Owner);
 		gameobjOwner->Translate(velocity * DeltaTime);
 		velocity = velocity * 0.97f;
+		
+		cooldownCount -= DeltaTime;
 	}
 
 	void Destroy() {}
@@ -83,7 +115,7 @@ public:
 	void OnInput(const gueepo::InputState& currentInputState);
 	void OnEvent(gueepo::Event& e) override {}
 	void OnRender() override;
-	void OnImGuiRender() override {}
+	void OnImGuiRender() override;
 
 private:
 	std::unique_ptr<gueepo::OrtographicCamera> m_Camera;
@@ -124,6 +156,7 @@ void GameLayer::OnDetach() {
 }
 
 void GameLayer::OnUpdate(float DeltaTime) {
+	fps = 1 / DeltaTime;
 	m_gameWorld->Update(DeltaTime);
 }
 
@@ -135,6 +168,15 @@ void GameLayer::OnRender() {
 	gueepo::Renderer::BeginScene(*m_Camera);
 	m_gameWorld->Render();
 	gueepo::Renderer::EndScene();
+}
+
+void GameLayer::OnImGuiRender()
+{
+	ImGui::Begin("debug");
+	ImGui::Text("entities: %d", m_gameWorld->GetNumberOfEntities());
+	ImGui::Text("FPS: %.2f", fps);
+	ImGui::Text("Draw Calls: %d", gueepo::Renderer::GetDrawCalls());
+	ImGui::End();
 }
 
 class shootemshmup : public gueepo::Application {
