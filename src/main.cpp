@@ -9,6 +9,7 @@
 #include <imgui.h>
 
 static float fps;
+static bool bShowDebug = false;
 
 // #todo: probably have to create a projectile manager or something that destroys projectiles after some time and when they are out of the camera
 class ProjectileComponent : public gueepo::Component {
@@ -79,6 +80,7 @@ public:
 			proj->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
 			proj->transform->position = proj->transform->position + projectilePositionOffset;
 			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
+			proj->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
 			proj->AddComponent<ProjectileComponent>();
 
 			gueepo::GameObject* proj2 = gameWorld->CreateGameObject(projectileTexture, "projectile");
@@ -86,6 +88,7 @@ public:
 			proj2->transform->position.x -= projectilePositionOffset.x;
 			proj2->transform->position.y += projectilePositionOffset.y;
 			proj2->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
+			proj2->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
 			proj2->AddComponent<ProjectileComponent>();
 
 
@@ -118,6 +121,10 @@ public:
 	void Destroy() {}
 };
 
+// ================================================================================================
+// ================================================================================================
+// ================================================================================================
+// ================================================================================================
 class GameLayer : public gueepo::Layer {
 public:
 	GameLayer() : Layer("Game Layer") {}
@@ -134,6 +141,7 @@ private:
 	std::unique_ptr<gueepo::OrtographicCamera> m_Camera;
 	std::shared_ptr<gueepo::GameWorld> m_gameWorld;
 	std::unique_ptr<gueepo::ResourceManager> m_resourceManager;
+	std::unique_ptr<gueepo::CollisionWorld> m_collisionWorld;
 };
 
 void GameLayer::OnAttach() {
@@ -143,6 +151,8 @@ void GameLayer::OnAttach() {
 
 	m_gameWorld = std::make_shared<gueepo::GameWorld>();
 	m_resourceManager = std::make_unique<gueepo::ResourceManager>();
+	m_collisionWorld = std::make_unique<gueepo::CollisionWorld>();
+	m_collisionWorld->Initialize();
 
 	m_resourceManager->AddTexture("ship", "./assets/ships_packed.png");
 	m_resourceManager->AddTilemap("ship-tilemap", "ship");
@@ -156,6 +166,8 @@ void GameLayer::OnAttach() {
 	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(4));
 	test->SetScale(1.5f, 1.5f);
 	test->SetPosition(gueepo::math::vec2(0.0f, -150.0f));
+	test->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-8.0f, -8.0f), gueepo::math::vec2(8.0f, 8.0f));
+
 	ShipComponent& comp = test->AddComponent<ShipComponent>();
 	comp.gameWorld = m_gameWorld;
 	comp.projectileTexture = m_resourceManager->GetTexture("tiles");
@@ -167,6 +179,7 @@ void GameLayer::OnAttach() {
 	enemyTest->SetScale(2.0f, 2.0f);
 	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 100.0f));
 	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
+	enemyTest->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-10.0f, -10.0f), gueepo::math::vec2(10.0f, 10.0f));
 }
 
 void GameLayer::OnDetach() {
@@ -181,11 +194,20 @@ void GameLayer::OnUpdate(float DeltaTime) {
 
 void GameLayer::OnInput(const gueepo::InputState& currentInputState) {
 	m_gameWorld->ProcessInput(currentInputState);
+
+	if (currentInputState.Keyboard.WasKeyPressedThisFrame(gueepo::Keycode::KEYCODE_1)) {
+		bShowDebug = !bShowDebug;
+	}
 }
 
 void GameLayer::OnRender() {
 	gueepo::Renderer::BeginScene(*m_Camera);
 	m_gameWorld->Render();
+
+	if (bShowDebug) {
+		m_collisionWorld->Debug_Render();
+	}
+	 
 	gueepo::Renderer::EndScene();
 }
 
