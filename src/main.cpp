@@ -161,6 +161,12 @@ void GameLayer::OnAttach() {
 	comp.projectileTexture = m_resourceManager->GetTexture("tiles");
 	comp.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(9).GetRect().bottomLeft;
 	comp.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(9).GetRect().topRight;
+
+	gueepo::GameObject* enemyTest = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "enemy test");
+	enemyTest->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(10));
+	enemyTest->SetScale(2.0f, 2.0f);
+	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 100.0f));
+	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
 }
 
 void GameLayer::OnDetach() {
