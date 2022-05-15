@@ -30,11 +30,19 @@ public:
 
 		velocity.y += randomVariation;
 		Owner->SetLifetime(lifetime);
+
+		gueepo::BoxCollider* box = Owner->GetComponentOfType<gueepo::BoxCollider>();
+		box->OnCollisionEnter = COLLISION_CALLBACK(&ProjectileComponent::ProjectileOnCollisionEnter);
 	}
 
 	void Update(float DeltaTime) {
 		gueepo::GameObject* gameobjOwner = static_cast<gueepo::GameObject*>(Owner);
 		gameobjOwner->Translate(velocity * DeltaTime);
+	}
+
+	void ProjectileOnCollisionEnter(gueepo::BoxCollider* other) {
+		gueepo::GameWorld::Kill(Owner);
+		gueepo::GameWorld::Kill(other->Owner);
 	}
 };
 
@@ -80,7 +88,8 @@ public:
 			proj->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
 			proj->transform->position = proj->transform->position + projectilePositionOffset;
 			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
-			proj->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
+			gueepo::BoxCollider& box = proj->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
+			
 			proj->AddComponent<ProjectileComponent>();
 
 			gueepo::GameObject* proj2 = gameWorld->CreateGameObject(projectileTexture, "projectile");
@@ -145,6 +154,7 @@ private:
 };
 
 void GameLayer::OnAttach() {
+
 	gueepo::Renderer::Initialize();
 	m_Camera = std::make_unique<gueepo::OrtographicCamera>(640, 360);
 	m_Camera->SetBackgroundColor(0.55f, 0.792f, 0.902f, 1.0f);
@@ -190,6 +200,7 @@ void GameLayer::OnDetach() {
 void GameLayer::OnUpdate(float DeltaTime) {
 	fps = 1 / DeltaTime;
 	m_gameWorld->Update(DeltaTime);
+	m_collisionWorld->Update();
 }
 
 void GameLayer::OnInput(const gueepo::InputState& currentInputState) {
