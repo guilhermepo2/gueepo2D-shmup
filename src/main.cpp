@@ -157,7 +157,7 @@ void GameLayer::OnAttach() {
 
 	gueepo::Renderer::Initialize();
 	m_Camera = std::make_unique<gueepo::OrtographicCamera>(640, 360);
-	m_Camera->SetBackgroundColor(0.55f, 0.792f, 0.902f, 1.0f);
+	m_Camera->SetBackgroundColor((223.0f / 255.0f), (246.0f / 255.0f), (245.0f / 255.0f), 1.0f);
 
 	m_gameWorld = std::make_shared<gueepo::GameWorld>();
 	m_resourceManager = std::make_unique<gueepo::ResourceManager>();
@@ -172,6 +172,12 @@ void GameLayer::OnAttach() {
 	m_resourceManager->AddTilemap("tiles-tilemap", "tiles");
 	m_resourceManager->GetTilemap("tiles-tilemap")->Slice(16, 16);
 
+	gueepo::json backgroundMap("./assets/maps/tilemap.json");
+	gueepo::Entity* myTilemap = m_gameWorld->CreateEntity("tilemap");
+	myTilemap->AddComponent<gueepo::TransformComponent>(gueepo::math::vec2(-300.0f, 200.0f), 0.0f, gueepo::math::vec2(2.0f, 2.0f));
+	gueepo::TilemapComponent& tilemapComponent = myTilemap->AddComponent<gueepo::TilemapComponent>();
+	tilemapComponent.LoadFromTiled(m_resourceManager->GetTilemap("tiles-tilemap"), backgroundMap);
+
 	gueepo::GameObject* test = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "shipTest");
 	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(4));
 	test->SetScale(1.5f, 1.5f);
@@ -181,11 +187,11 @@ void GameLayer::OnAttach() {
 	ShipComponent& comp = test->AddComponent<ShipComponent>();
 	comp.gameWorld = m_gameWorld;
 	comp.projectileTexture = m_resourceManager->GetTexture("tiles");
-	comp.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(9).GetRect().bottomLeft;
-	comp.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(9).GetRect().topRight;
+	comp.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().bottomLeft;
+	comp.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().topRight;
 
 	gueepo::GameObject* enemyTest = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "enemy test");
-	enemyTest->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(10));
+	enemyTest->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(5));
 	enemyTest->SetScale(2.0f, 2.0f);
 	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 100.0f));
 	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
