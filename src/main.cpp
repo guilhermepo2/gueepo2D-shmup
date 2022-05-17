@@ -6,132 +6,14 @@
 // ================================================
 
 #include <gueepo2d.h>
+#include "ProjectileComponent.h"
+#include "ScrollerComponent.h"
+#include "ShipComponent.h"
 #include <imgui.h>
 
 static float fps;
 static bool bShowDebug = false;
 
-// #todo: probably have to create a projectile manager or something that destroys projectiles after some time and when they are out of the camera
-class ProjectileComponent : public gueepo::Component {
-public:
-	gueepo::math::vec2 velocity;
-	float lifetime = 5.0f;
-
-	void Initialize() {
-		velocity.y = 300.0f;
-		// multiplying the velocity by a random factor
-		// I want to add/subtract 20% of the velocity according to random stuff
-		bool bShouldAdd = gueepo::rand::Int() % 2 == 0;
-		float randomVariation = gueepo::rand::Float() * (velocity.y * 0.1f);
-
-		if (!bShouldAdd) {
-			randomVariation *= -1;
-		}
-
-		velocity.y += randomVariation;
-		Owner->SetLifetime(lifetime);
-
-		gueepo::BoxCollider* box = Owner->GetComponentOfType<gueepo::BoxCollider>();
-		box->OnCollisionEnter = COLLISION_CALLBACK(&ProjectileComponent::ProjectileOnCollisionEnter);
-	}
-
-	void Update(float DeltaTime) {
-		gueepo::GameObject* gameobjOwner = static_cast<gueepo::GameObject*>(Owner);
-		gameobjOwner->Translate(velocity * DeltaTime);
-	}
-
-	void ProjectileOnCollisionEnter(gueepo::BoxCollider* other) {
-		gueepo::GameWorld::Kill(Owner);
-		gueepo::GameWorld::Kill(other->Owner);
-	}
-};
-
-class ShipComponent : public gueepo::Component {
-public:
-	gueepo::math::vec2 velocity;
-	float shipSpeed;
-	float accelerationRate;
-	std::shared_ptr<gueepo::GameWorld> gameWorld;
-	gueepo::Texture* projectileTexture;
-	gueepo::math::vec2 projectileMinVec;
-	gueepo::math::vec2 projectileMaxVec;
-	gueepo::math::vec2 projectilePositionOffset;
-
-	float shootingCooldown = 0.0f;
-	float cooldownCount = 0.0f;
-
-	void Initialize() {
-		shipSpeed = 200.0f;
-		accelerationRate = 0.05f;
-
-		projectilePositionOffset.x = 8.0f;
-		projectilePositionOffset.y = 24.0f;
-
-		shootingCooldown = 0.1f;
-	}
-
-	void BeginPlay() {}
-	
-	bool ProcessInput(const gueepo::InputState& CurrentInputState) { 
-		
-		// Handling Space (Shooting) first, and NOT returning
-		// Because we want the ability of being able to shoot and move at the same time :)
-		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_SPACE) && cooldownCount <= 0.0f) {
-			// #todo: how to shoot?
-			// have to instantiate a new gameobject;
-			// how do I instantiate a new gameobject from an entity?
-			// The current solution is having the gameworld as a public attribute here, I don't like it.
-			// Should the game world be a global? like GameObject.Instantiate(position, rotation, scale)?
-
-			
-			gueepo::GameObject* proj = gameWorld->CreateGameObject(projectileTexture, "projectile");
-			proj->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
-			proj->transform->position = proj->transform->position + projectilePositionOffset;
-			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
-			gueepo::BoxCollider& box = proj->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
-			
-			proj->AddComponent<ProjectileComponent>();
-
-			gueepo::GameObject* proj2 = gameWorld->CreateGameObject(projectileTexture, "projectile");
-			proj2->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
-			proj2->transform->position.x -= projectilePositionOffset.x;
-			proj2->transform->position.y += projectilePositionOffset.y;
-			proj2->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
-			proj2->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
-			proj2->AddComponent<ProjectileComponent>();
-
-
-			cooldownCount = shootingCooldown;
-		}
-
-		if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_D)) {
-			velocity.x += shipSpeed * accelerationRate;
-			if (velocity.x > shipSpeed) velocity.x = shipSpeed;
-			return true;
-		}
-		else if (CurrentInputState.Keyboard.IsKeyDown(gueepo::KEYCODE_A)) {
-			velocity.x -= shipSpeed * accelerationRate;
-			if (velocity.x < -shipSpeed) velocity.x = -shipSpeed;
-			return true;
-		}
-		
-
-		return false;
-	}
-
-	void Update(float DeltaTime) { 
-		gueepo::GameObject* gameobjOwner = static_cast<gueepo::GameObject*>(Owner);
-		gameobjOwner->Translate(velocity * DeltaTime);
-		velocity = velocity * 0.97f;
-		
-		cooldownCount -= DeltaTime;
-	}
-
-	void Destroy() {}
-};
-
-// ================================================================================================
-// ================================================================================================
 // ================================================================================================
 // ================================================================================================
 class GameLayer : public gueepo::Layer {
@@ -177,6 +59,7 @@ void GameLayer::OnAttach() {
 	myTilemap->AddComponent<gueepo::TransformComponent>(gueepo::math::vec2(-300.0f, 200.0f), 0.0f, gueepo::math::vec2(2.0f, 2.0f));
 	gueepo::TilemapComponent& tilemapComponent = myTilemap->AddComponent<gueepo::TilemapComponent>();
 	tilemapComponent.LoadFromTiled(m_resourceManager->GetTilemap("tiles-tilemap"), backgroundMap);
+	myTilemap->AddComponent<ScrollerComponent>();
 
 	gueepo::GameObject* test = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "shipTest");
 	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(4));
@@ -230,11 +113,13 @@ void GameLayer::OnRender() {
 
 void GameLayer::OnImGuiRender()
 {
-	ImGui::Begin("debug");
-	ImGui::Text("entities: %d", m_gameWorld->GetNumberOfEntities());
-	ImGui::Text("FPS: %.2f", fps);
-	ImGui::Text("Draw Calls: %d", gueepo::Renderer::GetDrawCalls());
-	ImGui::End();
+	if (bShowDebug) {
+		ImGui::Begin("debug");
+		ImGui::Text("entities: %d", m_gameWorld->GetNumberOfEntities());
+		ImGui::Text("FPS: %.2f", fps);
+		ImGui::Text("Draw Calls: %d", gueepo::Renderer::GetDrawCalls());
+		ImGui::End();
+	}
 }
 
 class shootemshmup : public gueepo::Application {

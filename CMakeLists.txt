@@ -12,6 +12,9 @@ set_target_properties(glad dearimgui gueepo2D-engine PROPERTIES FOLDER thirdpart
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/ScrollerComponent.h
+    src/ProjectileComponent.h
+    src/ShipComponent.h
 )
 
 target_link_directories(${PROJECT_NAME}
