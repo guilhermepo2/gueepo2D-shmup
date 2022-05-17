@@ -14,7 +14,7 @@
 
 static float fps;
 static bool bShowDebug = false;
-static float spawnAnEnemyEvery = 5.0f;
+static float spawnAnEnemyEvery = 1.0f;
 static float spawnTimer = 0.0f;
 
 // ================================================================================================
@@ -150,7 +150,7 @@ void GameLayer::Factory_CreateEnemy() {
 	gueepo::GameObject* enemyTest = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "enemy");
 	enemyTest->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(5));
 	enemyTest->SetScale(2.0f, 2.0f);
-	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 100.0f));
+	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 300.0f));
 	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
 	enemyTest->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-10.0f, -10.0f), gueepo::math::vec2(10.0f, 10.0f));
 	EnemyComponent& en = enemyTest->AddComponent<EnemyComponent>();

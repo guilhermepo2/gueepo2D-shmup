@@ -16,6 +16,12 @@ public:
 	void Initialize() {
 		speed = 100.0f;
 		velocity.x = speed;
+
+		if (gueepo::rand::Int() % 2 == 0) {
+			velocity.x *= -1;
+		}
+
+		velocity.y = -100.0f;
 		timeToShoot = 1.5f;
 		shotCooldown = timeToShoot;
 	}

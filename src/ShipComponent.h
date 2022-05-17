@@ -17,7 +17,7 @@ public:
 	float cooldownCount = 0.0f;
 
 	void Initialize() {
-		shipSpeed = 200.0f;
+		shipSpeed = 400.0f;
 		accelerationRate = 0.05f;
 
 		projectilePositionOffset.x = 8.0f;
