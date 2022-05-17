@@ -45,8 +45,8 @@ public:
 			proj->transform->position = proj->transform->position + projectilePositionOffset;
 			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
 			gueepo::BoxCollider& box = proj->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
-
-			proj->AddComponent<ProjectileComponent>();
+			ProjectileComponent& pj = proj->AddComponent<ProjectileComponent>();
+			pj.friendly = true;
 
 			gueepo::GameObject* proj2 = gameWorld->CreateGameObject(projectileTexture, "projectile");
 			proj2->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
@@ -54,7 +54,8 @@ public:
 			proj2->transform->position.y += projectilePositionOffset.y;
 			proj2->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
 			proj2->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
-			proj2->AddComponent<ProjectileComponent>();
+			ProjectileComponent& pj2 = proj2->AddComponent<ProjectileComponent>();
+			pj2.friendly = true;
 
 
 			cooldownCount = shootingCooldown;

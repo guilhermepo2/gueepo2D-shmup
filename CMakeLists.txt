@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME}
     src/ScrollerComponent.h
     src/ProjectileComponent.h
     src/ShipComponent.h
+    src/EnemyComponent.h
 )
 
 target_link_directories(${PROJECT_NAME}

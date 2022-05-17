@@ -6,6 +6,7 @@ class ProjectileComponent : public gueepo::Component {
 public:
 	gueepo::math::vec2 velocity;
 	float lifetime = 5.0f;
+	bool friendly;
 
 	void Initialize() {
 		velocity.y = 300.0f;
@@ -33,7 +34,17 @@ public:
 	}
 
 	void ProjectileOnCollisionEnter(gueepo::BoxCollider* other) {
-		gueepo::GameWorld::Kill(Owner);
-		gueepo::GameWorld::Kill(other->Owner);
+		if (friendly) {
+			if (other->Owner->Name == "enemy") {
+				gueepo::GameWorld::Kill(other->Owner);
+				gueepo::GameWorld::Kill(Owner);
+			}
+		}
+		else {
+			if (other->Owner->Name == "player") {
+				LOG_INFO("player took damage!");
+				gueepo::GameWorld::Kill(Owner);
+			}
+		}
 	}
 };

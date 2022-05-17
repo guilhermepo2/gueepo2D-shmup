@@ -9,10 +9,13 @@
 #include "ProjectileComponent.h"
 #include "ScrollerComponent.h"
 #include "ShipComponent.h"
+#include "EnemyComponent.h"
 #include <imgui.h>
 
 static float fps;
 static bool bShowDebug = false;
+static float spawnAnEnemyEvery = 5.0f;
+static float spawnTimer = 0.0f;
 
 // ================================================================================================
 // ================================================================================================
@@ -33,6 +36,8 @@ private:
 	std::shared_ptr<gueepo::GameWorld> m_gameWorld;
 	std::unique_ptr<gueepo::ResourceManager> m_resourceManager;
 	std::unique_ptr<gueepo::CollisionWorld> m_collisionWorld;
+
+	void Factory_CreateEnemy();
 };
 
 void GameLayer::OnAttach() {
@@ -61,7 +66,8 @@ void GameLayer::OnAttach() {
 	tilemapComponent.LoadFromTiled(m_resourceManager->GetTilemap("tiles-tilemap"), backgroundMap);
 	myTilemap->AddComponent<ScrollerComponent>();
 
-	gueepo::GameObject* test = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "shipTest");
+	// -----------------------------------------------------------------------------------------------------------------
+	gueepo::GameObject* test = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "player");
 	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(4));
 	test->SetScale(1.5f, 1.5f);
 	test->SetPosition(gueepo::math::vec2(0.0f, -150.0f));
@@ -73,12 +79,7 @@ void GameLayer::OnAttach() {
 	comp.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().bottomLeft;
 	comp.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().topRight;
 
-	gueepo::GameObject* enemyTest = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "enemy test");
-	enemyTest->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(5));
-	enemyTest->SetScale(2.0f, 2.0f);
-	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 100.0f));
-	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
-	enemyTest->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-10.0f, -10.0f), gueepo::math::vec2(10.0f, 10.0f));
+	Factory_CreateEnemy();
 }
 
 void GameLayer::OnDetach() {
@@ -88,6 +89,14 @@ void GameLayer::OnDetach() {
 
 void GameLayer::OnUpdate(float DeltaTime) {
 	fps = 1 / DeltaTime;
+
+	spawnTimer += DeltaTime;
+
+	if (spawnTimer > spawnAnEnemyEvery) {
+		Factory_CreateEnemy();
+		spawnTimer = 0.0f;
+	}
+
 	m_gameWorld->Update(DeltaTime);
 	m_collisionWorld->Update();
 }
@@ -132,4 +141,21 @@ public:
 
 gueepo::Application* gueepo::CreateApplication() {
 	return new shootemshmup();
+}
+
+
+// -----------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------
+void GameLayer::Factory_CreateEnemy() {
+	gueepo::GameObject* enemyTest = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "enemy");
+	enemyTest->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(5));
+	enemyTest->SetScale(2.0f, 2.0f);
+	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 100.0f));
+	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
+	enemyTest->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-10.0f, -10.0f), gueepo::math::vec2(10.0f, 10.0f));
+	EnemyComponent& en = enemyTest->AddComponent<EnemyComponent>();
+	en.gameWorld = m_gameWorld;
+	en.projectileTexture = m_resourceManager->GetTexture("tiles");
+	en.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().bottomLeft;
+	en.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().topRight;
 }
