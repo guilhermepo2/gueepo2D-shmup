@@ -12,6 +12,9 @@
 #include "EnemyComponent.h"
 #include <imgui.h>
 
+static const int window_width = 640;
+static const int window_height = 640;
+
 static float fps;
 static bool bShowDebug = false;
 static float spawnAnEnemyEvery = 1.0f;
@@ -37,13 +40,15 @@ private:
 	std::unique_ptr<gueepo::ResourceManager> m_resourceManager;
 	std::unique_ptr<gueepo::CollisionWorld> m_collisionWorld;
 
+public:
 	void Factory_CreateEnemy();
+	void Factory_CreateExplosion();
 };
 
 void GameLayer::OnAttach() {
 
 	gueepo::Renderer::Initialize();
-	m_Camera = std::make_unique<gueepo::OrtographicCamera>(640, 360);
+	m_Camera = std::make_unique<gueepo::OrtographicCamera>(window_width, window_height);
 	m_Camera->SetBackgroundColor((223.0f / 255.0f), (246.0f / 255.0f), (245.0f / 255.0f), 1.0f);
 
 	m_gameWorld = std::make_shared<gueepo::GameWorld>();
@@ -69,8 +74,8 @@ void GameLayer::OnAttach() {
 	// -----------------------------------------------------------------------------------------------------------------
 	gueepo::GameObject* test = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "player");
 	test->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(4));
-	test->SetScale(1.5f, 1.5f);
-	test->SetPosition(gueepo::math::vec2(0.0f, -150.0f));
+	test->SetScale(2.0f, 2.0f);
+	test->SetPosition(gueepo::math::vec2(0.0f, -280.0f));
 	test->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-8.0f, -8.0f), gueepo::math::vec2(8.0f, 8.0f));
 
 	ShipComponent& comp = test->AddComponent<ShipComponent>();
@@ -133,7 +138,7 @@ void GameLayer::OnImGuiRender()
 
 class shootemshmup : public gueepo::Application {
 public:
-	shootemshmup() : Application("shoot'em shmup ", 640, 360) {
+	shootemshmup() : Application("shoot'em shmup ", window_width, window_height) {
 		PushLayer(new GameLayer());
 	}
 	~shootemshmup() {}
@@ -150,12 +155,28 @@ void GameLayer::Factory_CreateEnemy() {
 	gueepo::GameObject* enemyTest = m_gameWorld->CreateGameObject(m_resourceManager->GetTexture("ship"), "enemy");
 	enemyTest->sprite->RebuildFromTile(m_resourceManager->GetTilemap("ship-tilemap")->GetTile(5));
 	enemyTest->SetScale(2.0f, 2.0f);
-	enemyTest->SetPosition(gueepo::math::vec2(0.0f, 300.0f));
+	enemyTest->SetLifetime(50.0f);
+
+	float xpos = gueepo::rand::Float() * 150;
+	enemyTest->SetPosition(gueepo::math::vec2(xpos, 300.0f));
 	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
 	enemyTest->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-10.0f, -10.0f), gueepo::math::vec2(10.0f, 10.0f));
 	EnemyComponent& en = enemyTest->AddComponent<EnemyComponent>();
 	en.gameWorld = m_gameWorld;
 	en.projectileTexture = m_resourceManager->GetTexture("tiles");
-	en.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().bottomLeft;
-	en.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(0).GetRect().topRight;
+	en.projectileMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(2).GetRect().bottomLeft;
+	en.projectileMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(2).GetRect().topRight;
+
+	en.explosionTexture = m_resourceManager->GetTexture("tiles");
+	en.explosionMinVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(4).GetRect().bottomLeft;
+	en.explosionMaxVec = m_resourceManager->GetTilemap("tiles-tilemap")->GetTile(4).GetRect().topRight;
+}
+
+void GameLayer::Factory_CreateExplosion() {
+	gueepo::Texture* tilesheet = m_resourceManager->GetTexture("tiles");
+	gueepo::Tilemap* tilemap = m_resourceManager->GetTilemap("tiles-tilemap");
+
+	gueepo::GameObject* explo = m_gameWorld->CreateGameObject(tilesheet, "explosion");
+	explo->sprite->RebuildFromTile(tilemap->GetTile(4));
+	explo->SetLifetime(0.1f);
 }

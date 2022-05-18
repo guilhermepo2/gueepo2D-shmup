@@ -13,6 +13,11 @@ public:
 	gueepo::math::vec2 projectileMinVec;
 	gueepo::math::vec2 projectileMaxVec;
 
+	// death explosion stuff
+	gueepo::Texture* explosionTexture;
+	gueepo::math::vec2 explosionMinVec;
+	gueepo::math::vec2 explosionMaxVec;
+
 	void Initialize() {
 		speed = 100.0f;
 		velocity.x = speed;
@@ -24,6 +29,11 @@ public:
 		velocity.y = -100.0f;
 		timeToShoot = 1.5f;
 		shotCooldown = timeToShoot;
+
+		gueepo::BoxCollider* box = Owner->GetComponentOfType<gueepo::BoxCollider>();
+		if (box != nullptr) {
+			box->OnCollisionEnter = COLLISION_CALLBACK(&EnemyComponent::EnemyOnCollisionEnter);
+		}
 	}
 
 	void Update(float DeltaTime) override {
@@ -31,7 +41,6 @@ public:
 		shotCooldown -= DeltaTime;
 
 		if (shotCooldown < 0.0f) {
-			LOG_INFO("shooting!");
 
 			gueepo::GameObject* proj = gameWorld->CreateGameObject(projectileTexture, "projectile");
 			proj->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
@@ -66,5 +75,23 @@ public:
 		}
 
 		gameobjOwner->Translate(velocity * DeltaTime);
+	}
+
+	void EnemyOnCollisionEnter(gueepo::BoxCollider* other) {
+		// checking if we were hit by a friendly projectile
+		if (other->GetTag() == "player-projectile") {
+			if (explosionTexture != nullptr) {
+				gueepo::GameObject* gameobjOwner = static_cast<gueepo::GameObject*>(Owner);
+				gueepo::TransformComponent* transform = gameobjOwner->GetComponentOfType<gueepo::TransformComponent>();
+
+				gueepo::GameObject* explo = gameWorld->CreateGameObject(explosionTexture, "explosion");
+				explo->transform->position = transform->position;
+				explo->transform->position.x = gueepo::math::round(explo->transform->position.x);
+				explo->transform->position.y = gueepo::math::round(explo->transform->position.y);
+				explo->transform->scale = gueepo::math::vec2(3.0f);
+				explo->sprite->RebuildSourceRectangle(explosionMinVec, explosionMaxVec);
+				explo->SetLifetime(0.2f);
+			}
+		}
 	}
 };

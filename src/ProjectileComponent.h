@@ -1,7 +1,6 @@
 #pragma once
 #include <gueepo2D.h>
 
-// #todo: probably have to create a projectile manager or something that destroys projectiles after some time and when they are out of the camera
 class ProjectileComponent : public gueepo::Component {
 public:
 	gueepo::math::vec2 velocity;

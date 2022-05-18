@@ -45,6 +45,7 @@ public:
 			proj->transform->position = proj->transform->position + projectilePositionOffset;
 			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
 			gueepo::BoxCollider& box = proj->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
+			box.SetTag("player-projectile");
 			ProjectileComponent& pj = proj->AddComponent<ProjectileComponent>();
 			pj.friendly = true;
 
@@ -53,7 +54,8 @@ public:
 			proj2->transform->position.x -= projectilePositionOffset.x;
 			proj2->transform->position.y += projectilePositionOffset.y;
 			proj2->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
-			proj2->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
+			gueepo::BoxCollider& box2 = proj2->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
+			box2.SetTag("player-projectile");
 			ProjectileComponent& pj2 = proj2->AddComponent<ProjectileComponent>();
 			pj2.friendly = true;
 
