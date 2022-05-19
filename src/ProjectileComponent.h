@@ -8,19 +8,7 @@ public:
 	bool friendly;
 
 	void Initialize() {
-		velocity.y = 300.0f;
-		// multiplying the velocity by a random factor
-		// I want to add/subtract 20% of the velocity according to random stuff
-		/*
-		bool bShouldAdd = gueepo::rand::Int() % 2 == 0;
-		float randomVariation = gueepo::rand::Float() * (velocity.y * 0.1f);
-
-		if (!bShouldAdd) {
-			randomVariation *= -1;
-		}
-
-		velocity.y += randomVariation;
-		*/
+		velocity.y = 1200.0f;
 		Owner->SetLifetime(lifetime);
 
 		gueepo::BoxCollider* box = Owner->GetComponentOfType<gueepo::BoxCollider>();

@@ -19,7 +19,7 @@ public:
 	gueepo::math::vec2 explosionMaxVec;
 
 	void Initialize() {
-		speed = 100.0f;
+		speed = 300.0f;
 		velocity.x = speed;
 
 		if (gueepo::rand::Int() % 2 == 0) {
@@ -46,18 +46,24 @@ public:
 			proj->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
 			proj->transform->position = proj->transform->position + gueepo::math::vec2(8.0f, -24.0f);
 			proj->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
+			proj->sprite->spriteTint.rgba[1] = 0.0f;
+			proj->sprite->spriteTint.rgba[2] = 0.0f;
+			proj->sprite->spriteTint.rgba[3] = 0.5f;
 			proj->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
 			ProjectileComponent& pj = proj->AddComponent<ProjectileComponent>();
-			pj.velocity.y = -300.0f;
+			pj.velocity.y = -600.0f;
 			pj.friendly = false;
 
 			gueepo::GameObject* proj2 = gameWorld->CreateGameObject(projectileTexture, "projectile");
 			proj2->transform->position = Owner->GetComponentOfType<gueepo::TransformComponent>()->position;
 			proj2->transform->position = proj2->transform->position + gueepo::math::vec2(-8.0f, -24.0f);
 			proj2->sprite->RebuildSourceRectangle(projectileMinVec, projectileMaxVec);
+			proj2->sprite->spriteTint.rgba[1] = 0.0f;
+			proj2->sprite->spriteTint.rgba[2] = 0.0f;
+			proj2->sprite->spriteTint.rgba[3] = 0.5f;
 			proj2->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-4.0f, -8.0f), gueepo::math::vec2(4.0f, 8.0f));
 			ProjectileComponent& pj2 = proj2->AddComponent<ProjectileComponent>();
-			pj2.velocity.y = -300.0f;
+			pj2.velocity.y = -600.0f;
 			pj2.friendly = false;
 
 			shotCooldown = timeToShoot;

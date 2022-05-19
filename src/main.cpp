@@ -4,6 +4,13 @@
 // - [ ] add a trail renderer on projectiles? (I have no idea how to do that but that would be cool)
 // - [ ] particles would be cool
 // ================================================
+// Things I dislike about this project
+// - I'm not sure if I like the idea of the GameWorld being a singleton
+// - A very recurrent problem that I ran up to is that I need a reference for the gameworld and resource manager or even the game layer in a component,
+// in case I ever want to create another component inside a component (like shooting! and exploding!).
+// Is there a better way to do that than injecting References* into the component or by using singletons?
+// - I could just use a bunch of std::function but that also sounds a bit weird.
+// ================================================
 
 #include <gueepo2d.h>
 #include "ProjectileComponent.h"
@@ -161,6 +168,7 @@ void GameLayer::Factory_CreateEnemy() {
 	enemyTest->SetPosition(gueepo::math::vec2(xpos, 300.0f));
 	enemyTest->GetComponentOfType<gueepo::TransformComponent>()->rotation = 180;
 	enemyTest->AddComponent<gueepo::BoxCollider>(gueepo::math::vec2(-10.0f, -10.0f), gueepo::math::vec2(10.0f, 10.0f));
+
 	EnemyComponent& en = enemyTest->AddComponent<EnemyComponent>();
 	en.gameWorld = m_gameWorld;
 	en.projectileTexture = m_resourceManager->GetTexture("tiles");
